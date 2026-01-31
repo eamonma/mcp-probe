@@ -193,6 +193,22 @@ All tools accept **bounded numeric parameters and enums only**—no free-form te
 
 ---
 
+### 4.9 `sampling_demo`
+
+**Purpose**: Demonstrate `sampling/createMessage` by requesting an LLM response from the client.
+
+| Aspect     | Detail                                                                 |
+| ---------- | ---------------------------------------------------------------------- |
+| Type       | Synchronous                                                            |
+| Exercises  | `sampling/createMessage`                                               |
+| Parameters | `theme`: enum, `style`: enum, `maxTokens`: number (16–256)             |
+| Behavior   | Requests a sampled response from the client and returns the text block |
+| Returns    | Sampled text content                                                   |
+
+**Expected client behavior**: Client should prompt the user for sampling approval and return text content.
+
+---
+
 ## 5. Dashboard Requirements
 
 ### 5.1 Access
@@ -306,3 +322,4 @@ All tools accept **bounded numeric parameters and enums only**—no free-form te
 | `multi_stage_task`   | `stageCount`: 2–10, `msPerStage`: 500–10000                 |
 | `failing_task`       | `failAfterMs`: 1000–30000, `errorCode`: enum                |
 | `pausable_task`      | `itemCount`: 1–50, `pauseAfterItem`: 1–49                   |
+| `sampling_demo`      | `theme`: enum, `style`: enum, `maxTokens`: 16–256           |

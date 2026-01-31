@@ -45,3 +45,4 @@ Azure Container Apps at `mcp.eamon.io`. CI/CD via GitHub Actions on push to main
 | `multi_stage_task` | Progress message changes |
 | `failing_task` | Failed state handling |
 | `pausable_task` | Input-required state |
+| `sampling_demo` | Sampling request demo |
