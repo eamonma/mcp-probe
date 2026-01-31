@@ -237,6 +237,32 @@ describe('useEvents', () => {
     expect(result.current.sessions[0].sessionId).toBe('new-session');
   });
 
+  it('increments session event count when events arrive', async () => {
+    const { result } = renderHook(() => useEvents());
+
+    act(() => {
+      messageHandler?.({
+        type: 'sessions',
+        sessions: [
+          { sessionId: 'session-1', eventCount: 0 },
+        ],
+      });
+    });
+
+    const event: RequestEvent = {
+      type: 'request',
+      timestamp: Date.now(),
+      id: 1,
+      method: 'tools/list',
+    };
+
+    act(() => {
+      messageHandler?.({ type: 'event', sessionId: 'session-1', event });
+    });
+
+    expect(result.current.sessions[0].eventCount).toBe(1);
+  });
+
   it('removes session on session_closed message', async () => {
     const { result } = renderHook(() => useEvents());
 

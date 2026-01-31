@@ -19,6 +19,7 @@ describe('TasksTable', () => {
         status: 'working',
         createdAt: Date.now() - 5000,
         updatedAt: Date.now(),
+        statusMessage: 'Processing input',
       },
     ];
 
@@ -27,6 +28,7 @@ describe('TasksTable', () => {
     expect(screen.getByText('test-tool')).toBeInTheDocument();
     expect(screen.getByText('task-123')).toBeInTheDocument(); // Truncated ID
     expect(screen.getByText('working')).toBeInTheDocument();
+    expect(screen.getByText('Processing input')).toBeInTheDocument();
   });
 
   it('shows progress bar when progress is available', () => {

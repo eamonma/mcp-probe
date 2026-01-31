@@ -29,6 +29,13 @@ export function useEvents(): UseEventsResult {
     switch (message.type) {
       case 'event':
         setEventsWithSession((prev) => [{ event: message.event, sessionId: message.sessionId }, ...prev]);
+        setSessions((prev) =>
+          prev.map((session) =>
+            session.sessionId === message.sessionId
+              ? { ...session, eventCount: session.eventCount + 1 }
+              : session
+          )
+        );
         break;
 
       case 'backfill':

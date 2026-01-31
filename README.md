@@ -4,7 +4,7 @@ A diagnostic server for testing Model Context Protocol (MCP) client implementati
 
 ## What It Does
 
-MCP Probe exposes 8 diagnostic tools that exercise MCP protocol features—tasks, progress notifications, cancellation, failure states—so developers can verify their clients handle each correctly. A live dashboard shows all protocol traffic in real-time.
+MCP Probe exposes 8 diagnostic tools that exercise MCP protocol features—tasks, progress notifications, cancellation, failure states—so developers can verify their clients handle each correctly. A live dashboard shows all protocol traffic in real-time, with live session event counts and task status messages.
 
 ## Why It Exists
 

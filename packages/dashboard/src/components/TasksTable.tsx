@@ -56,6 +56,7 @@ export function TasksTable({ tasks }: TasksTableProps) {
           <TableHead>Tool</TableHead>
           <TableHead className="w-[100px]">Status</TableHead>
           <TableHead className="w-[120px]">Progress</TableHead>
+          <TableHead className="w-[200px]">Message</TableHead>
           <TableHead className="w-[80px] tabular-nums">Created</TableHead>
           <TableHead className="w-[80px] tabular-nums">Last Updated</TableHead>
         </TableRow>
@@ -94,6 +95,9 @@ export function TasksTable({ tasks }: TasksTableProps) {
               ) : (
                 <span className="text-muted-foreground">-</span>
               )}
+            </TableCell>
+            <TableCell className="text-sm text-muted-foreground truncate max-w-[200px]">
+              {task.statusMessage ?? '-'}
             </TableCell>
             <TableCell className="font-mono text-xs tabular-nums">
               {formatTime(task.createdAt)}
