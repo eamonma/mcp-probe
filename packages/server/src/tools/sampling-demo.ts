@@ -1,5 +1,6 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
+import type { CreateMessageRequestParams } from '@modelcontextprotocol/sdk/types.js';
 import { CreateMessageResultSchema } from '@modelcontextprotocol/sdk/types.js';
 
 export const name = 'sampling_demo';
@@ -18,14 +19,20 @@ type Args = {
   maxTokens: number;
 };
 
+type SamplingRequestExtra = {
+  sendRequest: (
+    request: { method: 'sampling/createMessage'; params: CreateMessageRequestParams },
+    resultSchema: typeof CreateMessageResultSchema
+  ) => Promise<{ content: { type: string; text?: string } | Array<{ type: string; text?: string }> }>;
+};
+
 const styleInstructions: Record<Args['style'], string> = {
   haiku: 'Write a three-line haiku about the theme.',
   headline: 'Write a single-sentence headline about the theme.',
   bullets: 'Write exactly three bullet points about the theme.',
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function handler({ theme, style, maxTokens }: Args, extra: any) {
+export async function handler({ theme, style, maxTokens }: Args, extra: SamplingRequestExtra) {
   const systemPrompt = 'You are generating sample output for an MCP sampling demo.';
   const prompt = `${styleInstructions[style]} Theme: ${theme}.`;
 
@@ -65,11 +72,4 @@ export async function handler({ theme, style, maxTokens }: Args, extra: any) {
 
 export function register(server: McpServer): void {
   server.registerTool(name, { description, inputSchema }, handler);
-  server.server.registerCapabilities({
-    tasks: {
-      requests: {
-        sampling: { createMessage: {} },
-      },
-    },
-  });
 }
