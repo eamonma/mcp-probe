@@ -13,13 +13,6 @@ interface TasksTableProps {
   tasks: ActiveTask[];
 }
 
-function formatDuration(start: number, end: number): string {
-  const duration = end - start;
-  if (duration < 1000) return `${duration}ms`;
-  if (duration < 60000) return `${(duration / 1000).toFixed(1)}s`;
-  return `${(duration / 60000).toFixed(1)}m`;
-}
-
 function formatTime(timestamp: number): string {
   return new Date(timestamp).toLocaleTimeString('en-US', {
     hour12: false,

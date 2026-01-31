@@ -17,12 +17,8 @@ type Args = {
   mode: 'determinate' | 'indeterminate';
 };
 
-type Extra = {
-  _meta?: { progressToken?: string | number };
-  sendNotification: (notification: { method: string; params: unknown }) => Promise<void>;
-};
-
-export async function handler({ itemCount, delayPerItemMs, mode }: Args, extra: Extra) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function handler({ itemCount, delayPerItemMs, mode }: Args, extra: any) {
   const progressToken = extra._meta?.progressToken;
 
   for (let i = 1; i <= itemCount; i++) {
