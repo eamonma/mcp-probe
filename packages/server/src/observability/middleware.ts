@@ -82,7 +82,7 @@ export function createObservabilityMiddleware(
     }
 
     // For initialize requests, we'll emit in res.end() when we have the session ID
-    let deferredRequestEvent: { id: unknown; method: string; params: unknown } | null = null;
+    let deferredRequestEvent: { id: string | number; method: string; params: unknown } | null = null;
     if (isInitializeRequest) {
       deferredRequestEvent = {
         id: body.id,
@@ -138,7 +138,10 @@ export function createObservabilityMiddleware(
       if (typeof encodingOrCallback === 'function') {
         return originalWrite(chunk, encodingOrCallback);
       }
-      return originalWrite(chunk, encodingOrCallback, callback);
+      if (encodingOrCallback !== undefined) {
+        return originalWrite(chunk, encodingOrCallback, callback);
+      }
+      return originalWrite(chunk);
     } as typeof res.write;
 
     // Override end to capture final JSON response
@@ -189,7 +192,10 @@ export function createObservabilityMiddleware(
       if (typeof encodingOrCallback === 'function') {
         return originalEnd(chunk, encodingOrCallback);
       }
-      return originalEnd(chunk, encodingOrCallback, callback);
+      if (encodingOrCallback !== undefined) {
+        return originalEnd(chunk, encodingOrCallback, callback);
+      }
+      return originalEnd(chunk);
     } as typeof res.end;
 
     next();

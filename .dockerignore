@@ -1,0 +1,32 @@
+# Dependencies (will be installed fresh in container)
+node_modules
+packages/*/node_modules
+
+# Build outputs (will be built in container)
+dist
+packages/*/dist
+
+# Git
+.git
+.gitignore
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# Test artifacts
+coverage
+.vitest
+
+# Docs and specs
+*.md
+LICENSE
+
+# Local development
+.env
+.env.*
+
+# Claude/AI
+.claude
