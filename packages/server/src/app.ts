@@ -60,6 +60,10 @@ export function createApp(options?: AppOptions): AppWithObservability | AppWitho
     res.json({ status: 'ok' });
   });
 
+  app.get('/version', (_req, res) => {
+    res.json({ buildId: process.env.BUILD_ID ?? 'unknown' });
+  });
+
   // Set up observability if enabled
   const observabilityEnabled = options?.observability?.enabled ?? false;
   let eventRegistry: EventRegistry | undefined;

@@ -36,8 +36,8 @@ jobs:
 
       - name: Build and push image
         run: |
-          docker build -t ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ github.sha }} .
-          docker build -t ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:latest .
+          docker build --build-arg BUILD_ID=${{ github.sha }} -t ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ github.sha }} .
+          docker tag ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ github.sha }} ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:latest
           docker push ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
           docker push ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:latest
 
@@ -47,3 +47,18 @@ jobs:
             --name ${{ env.CONTAINER_APP_NAME }} \
             --resource-group ${{ env.RESOURCE_GROUP }} \
             --image ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+
+      - name: Verify deployment
+        run: |
+          echo "Waiting for deployment of ${{ github.sha }}..."
+          for i in {1..30}; do
+            DEPLOYED_ID=$(curl -sf https://mcp.eamon.io/version | jq -r '.buildId' 2>/dev/null || echo "")
+            if [ "$DEPLOYED_ID" = "${{ github.sha }}" ]; then
+              echo "Deployment verified after ${i}0 seconds"
+              exit 0
+            fi
+            echo "Attempt $i: got '$DEPLOYED_ID', waiting..."
+            sleep 10
+          done
+          echo "Deployment verification failed after 5 minutes"
+          exit 1

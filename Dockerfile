@@ -26,6 +26,9 @@ RUN npm run build
 # Production stage
 FROM node:20-alpine AS production
 
+ARG BUILD_ID=unknown
+ENV BUILD_ID=$BUILD_ID
+
 WORKDIR /app
 
 # Copy package files
