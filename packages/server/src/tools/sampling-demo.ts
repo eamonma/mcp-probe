@@ -56,7 +56,7 @@ export async function handler({ theme, style, maxTokens }: Args, extra: Sampling
 
     const sampledText = response.content.type === 'text'
       ? response.content.text
-      : 'No text response returned.';
+      : `Received non-text response (${response.content.type}).`;
 
     return {
       content: [{ type: 'text' as const, text: sampledText }],
