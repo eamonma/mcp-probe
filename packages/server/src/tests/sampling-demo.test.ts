@@ -77,4 +77,43 @@ describe('sampling_demo', () => {
     await client.close();
     await server.close();
   });
+
+  it('returns error message when sampling fails', async () => {
+    const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
+    const server = new McpServer(
+      { name: 'sampling-demo-server', version: '1.0.0' },
+      {
+        capabilities: {
+          tools: { listChanged: true },
+          tasks: { list: {}, cancel: {}, requests: { tools: { call: {} } } },
+        },
+      }
+    );
+
+    registerAllTools(server);
+    await server.connect(serverTransport);
+
+    const client = new Client(
+      { name: 'sampling-demo-client', version: '1.0.0' },
+      { capabilities: { sampling: {} } }
+    );
+
+    client.setRequestHandler(CreateMessageRequestSchema, async () => {
+      throw new Error('Sampling unavailable');
+    });
+
+    await client.connect(clientTransport);
+    await client.listTools();
+
+    const result = await client.callTool({
+      name: 'sampling_demo',
+      arguments: { theme: 'ocean', style: 'haiku', maxTokens: 64 },
+    }) as { content: Array<{ type: string; text: string }>; isError?: boolean };
+
+    expect(result.isError).toBe(true);
+    expect(result.content[0].text).toContain('Sampling request failed');
+
+    await client.close();
+    await server.close();
+  });
 });

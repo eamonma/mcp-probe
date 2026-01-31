@@ -1,6 +1,6 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
-import type { CreateMessageRequestParams } from '@modelcontextprotocol/sdk/types.js';
+import type { CreateMessageRequestParams, CreateMessageResult } from '@modelcontextprotocol/sdk/types.js';
 import { CreateMessageResultSchema } from '@modelcontextprotocol/sdk/types.js';
 
 export const name = 'sampling_demo';
@@ -23,7 +23,7 @@ type SamplingRequestExtra = {
   sendRequest: (
     request: { method: 'sampling/createMessage'; params: CreateMessageRequestParams },
     resultSchema: typeof CreateMessageResultSchema
-  ) => Promise<{ content: { type: string; text?: string } | Array<{ type: string; text?: string }> }>;
+  ) => Promise<CreateMessageResult>;
 };
 
 const styleInstructions: Record<Args['style'], string> = {
@@ -54,9 +54,9 @@ export async function handler({ theme, style, maxTokens }: Args, extra: Sampling
       CreateMessageResultSchema
     );
 
-    const content = Array.isArray(response.content) ? response.content : [response.content];
-    const textBlock = content.find((block: { type: string; text?: string }) => block.type === 'text');
-    const sampledText = textBlock?.text ?? 'No text response returned.';
+    const sampledText = response.content.type === 'text'
+      ? response.content.text
+      : 'No text response returned.';
 
     return {
       content: [{ type: 'text' as const, text: sampledText }],
