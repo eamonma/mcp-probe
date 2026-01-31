@@ -1,0 +1,22 @@
+{
+  "name": "mcp-probe",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "test": "vitest",
+    "test:watch": "vitest --watch",
+    "build": "npm run build --workspaces",
+    "build:dashboard": "npm run build --workspace=@mcp-probe/dashboard",
+    "build:server": "npm run build --workspace=@mcp-probe/server",
+    "dev": "npm run dev --workspace=@mcp-probe/server",
+    "dev:dashboard": "npm run dev --workspace=@mcp-probe/dashboard"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0"
+  }
+}
