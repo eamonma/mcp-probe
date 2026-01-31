@@ -9,6 +9,7 @@ import * as cancellableTask from './cancellable-task.js';
 import * as multiStageTask from './multi-stage-task.js';
 import * as failingTask from './failing-task.js';
 import * as pausableTask from './pausable-task.js';
+import * as samplingDemo from './sampling-demo.js';
 
 // Export individual tools for direct access
 export {
@@ -20,6 +21,7 @@ export {
   multiStageTask,
   failingTask,
   pausableTask,
+  samplingDemo,
 };
 
 // List of all tool names for reference
@@ -32,6 +34,7 @@ export const toolNames = [
   multiStageTask.name,
   failingTask.name,
   pausableTask.name,
+  samplingDemo.name,
 ] as const;
 
 /**
@@ -47,4 +50,5 @@ export function registerAllTools(server: McpServer): void {
   multiStageTask.register(server);
   failingTask.register(server);
   pausableTask.register(server);
+  samplingDemo.register(server);
 }
