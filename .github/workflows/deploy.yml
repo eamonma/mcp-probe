@@ -24,6 +24,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm test
+
       - name: Azure Login (OIDC)
         uses: azure/login@v2
         with:
