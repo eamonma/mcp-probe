@@ -6,7 +6,7 @@ import type { ActiveTask } from '@/types/events';
 describe('TasksTable', () => {
   it('renders empty state when no tasks', () => {
     render(<TasksTable tasks={[]} />);
-    expect(screen.getByText(/no active tasks/i)).toBeInTheDocument();
+    expect(screen.getByText(/no tasks/i)).toBeInTheDocument();
   });
 
   it('renders table with tasks', () => {

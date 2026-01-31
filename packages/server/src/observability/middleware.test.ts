@@ -63,7 +63,7 @@ describe('observability middleware', () => {
       expect(sessionId).toBe('my-session-123');
     });
 
-    it('extracts session ID from initialize request when no header', async () => {
+    it('uses session ID from response header for initialize request', async () => {
       app.post('/mcp', (_req, res) => {
         res.set('Mcp-Session-Id', 'new-session-456');
         res.json({ jsonrpc: '2.0', id: 1, result: {} });
@@ -81,8 +81,24 @@ describe('observability middleware', () => {
           params: { clientInfo: { name: 'test', version: '1.0' } },
         });
 
-      // Should still capture the request (may use response header for session)
+      // Both request and response should use the session ID from response header
       expect(listener).toHaveBeenCalled();
+
+      const requestCall = listener.mock.calls.find(
+        (call) => call[1].type === 'request'
+      );
+      const responseCall = listener.mock.calls.find(
+        (call) => call[1].type === 'response'
+      );
+
+      // The initialize request should be captured with the session ID from the response
+      expect(requestCall).toBeDefined();
+      expect(requestCall![0]).toBe('new-session-456');
+      expect(requestCall![1].method).toBe('initialize');
+
+      // The response should also use the same session ID
+      expect(responseCall).toBeDefined();
+      expect(responseCall![0]).toBe('new-session-456');
     });
   });
 

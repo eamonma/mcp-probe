@@ -2,34 +2,42 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useWebSocket } from './useWebSocket';
 import type { Event, ServerMessage, ActiveTask, ToolCall, SessionSummary } from '@/types/events';
 
+// Internal type that includes sessionId with the event
+interface EventWithSession {
+  event: Event;
+  sessionId: string;
+}
+
 interface UseEventsResult {
   events: Event[];
-  activeTasks: ActiveTask[];
+  allEvents: Event[];
+  allTasks: ActiveTask[];
   toolCalls: ToolCall[];
   sessions: SessionSummary[];
   connectionStatus: 'connecting' | 'connected' | 'disconnected' | 'error';
   selectedSession: string;
   setSelectedSession: (sessionId: string) => void;
+  clearEvents: () => void;
 }
 
-const TERMINAL_STATUSES = ['completed', 'failed', 'cancelled'];
-
 export function useEvents(): UseEventsResult {
-  const [events, setEvents] = useState<Event[]>([]);
+  const [eventsWithSession, setEventsWithSession] = useState<EventWithSession[]>([]);
   const [sessions, setSessions] = useState<SessionSummary[]>([]);
   const [selectedSession, setSelectedSession] = useState<string>('*');
 
   const handleMessage = useCallback((message: ServerMessage) => {
     switch (message.type) {
       case 'event':
-        setEvents((prev) => [message.event, ...prev]);
+        setEventsWithSession((prev) => [{ event: message.event, sessionId: message.sessionId }, ...prev]);
         break;
 
       case 'backfill':
-        setEvents((prev) => {
+        setEventsWithSession((prev) => {
           // Merge backfill events with existing, avoiding duplicates by timestamp
-          const existingTimestamps = new Set(prev.map((e) => e.timestamp));
-          const newEvents = message.events.filter((e) => !existingTimestamps.has(e.timestamp));
+          const existingTimestamps = new Set(prev.map((e) => e.event.timestamp));
+          const newEvents = message.events
+            .filter((e) => !existingTimestamps.has(e.timestamp))
+            .map((event) => ({ event, sessionId: message.sessionId }));
           return [...newEvents.reverse(), ...prev];
         });
         break;
@@ -80,8 +88,8 @@ export function useEvents(): UseEventsResult {
   // Subscribe to selected session
   useEffect(() => {
     if (status === 'connected') {
-      // Clear events when switching sessions
-      setEvents([]);
+      // Don't clear events when switching sessions - preserve all events
+      // and filter by selectedSession in the useMemo below
 
       // Subscribe to selected session
       subscribe(selectedSession);
@@ -97,8 +105,28 @@ export function useEvents(): UseEventsResult {
     }
   }, [status, selectedSession, subscribe, unsubscribe, requestBackfill]);
 
-  // Derive active tasks from events
-  const activeTasks = useMemo(() => {
+  // clearEvents function to manually clear all events
+  const clearEvents = useCallback(() => {
+    setEventsWithSession([]);
+  }, []);
+
+  // All events (unfiltered) - just the Event objects without sessionId wrapper
+  const allEvents = useMemo(() => {
+    return eventsWithSession.map((e) => e.event);
+  }, [eventsWithSession]);
+
+  // Filtered events based on selectedSession
+  const events = useMemo(() => {
+    if (selectedSession === '*') {
+      return eventsWithSession.map((e) => e.event);
+    }
+    return eventsWithSession
+      .filter((e) => e.sessionId === selectedSession)
+      .map((e) => e.event);
+  }, [eventsWithSession, selectedSession]);
+
+  // Derive all tasks from events (including terminal states)
+  const allTasks = useMemo(() => {
     const tasksMap = new Map<string, ActiveTask>();
     const progressMap = new Map<string, { current: number; total?: number; message?: string }>();
 
@@ -123,10 +151,7 @@ export function useEvents(): UseEventsResult {
           existing.statusMessage = event.statusMessage;
           existing.updatedAt = event.timestamp;
           existing.progress = progressMap.get(event.taskId);
-
-          if (TERMINAL_STATUSES.includes(event.newStatus)) {
-            tasksMap.delete(event.taskId);
-          }
+          // Keep all tasks including terminal statuses
         }
       } else if (event.type === 'notification' && event.method === 'notifications/progress') {
         const params = event.params as { progressToken?: string; progress?: number; total?: number; message?: string } | undefined;
@@ -202,11 +227,13 @@ export function useEvents(): UseEventsResult {
 
   return {
     events,
-    activeTasks,
+    allEvents,
+    allTasks,
     toolCalls,
     sessions,
     connectionStatus: status,
     selectedSession,
     setSelectedSession,
+    clearEvents,
   };
 }

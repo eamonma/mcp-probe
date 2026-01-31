@@ -50,7 +50,7 @@ export function TasksTable({ tasks }: TasksTableProps) {
   if (tasks.length === 0) {
     return (
       <div className="flex items-center justify-center h-40 text-muted-foreground">
-        No active tasks
+        No tasks
       </div>
     );
   }

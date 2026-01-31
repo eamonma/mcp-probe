@@ -93,9 +93,10 @@ describe('Observability Integration', () => {
     expect(eventsResponse.status).toBe(200);
     expect(eventsResponse.body.events.length).toBeGreaterThan(0);
 
-    // Should have captured tools/list request (initialize may be on 'unknown' session)
+    // Should have captured both initialize and tools/list requests in the session
     const requests = eventsResponse.body.events.filter((e: any) => e.type === 'request');
-    expect(requests.length).toBeGreaterThanOrEqual(1);
+    expect(requests.length).toBeGreaterThanOrEqual(2);
+    expect(requests.some((e: any) => e.method === 'initialize')).toBe(true);
     expect(requests.some((e: any) => e.method === 'tools/list')).toBe(true);
   });
 
@@ -259,8 +260,10 @@ describe('Observability Integration', () => {
       .get('/api/events/sessions');
 
     expect(sessionsResponse.status).toBe(200);
-    // May have an 'unknown' session from initialize requests without session ID
-    // Plus the two real sessions
-    expect(sessionsResponse.body.sessions.length).toBeGreaterThanOrEqual(2);
+    // Should have exactly 2 sessions (no 'unknown' session for initialize requests)
+    expect(sessionsResponse.body.sessions.length).toBe(2);
+    // Verify no 'unknown' session exists
+    const sessionIds = sessionsResponse.body.sessions.map((s: any) => s.sessionId);
+    expect(sessionIds).not.toContain('unknown');
   });
 });

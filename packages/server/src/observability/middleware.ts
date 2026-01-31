@@ -66,8 +66,10 @@ export function createObservabilityMiddleware(
 
     // Capture request if it looks like JSON-RPC
     const body = req.body;
-    if (body && typeof body === 'object' && 'method' in body) {
-      // Use a placeholder session if none provided
+    const isInitializeRequest = body?.method === 'initialize' && !sessionId;
+
+    // For non-initialize requests with a session ID, emit immediately
+    if (body && typeof body === 'object' && 'method' in body && !isInitializeRequest) {
       const effectiveSessionId = sessionId || 'unknown';
       const bus = registry.getOrCreateBus(effectiveSessionId);
 
@@ -77,6 +79,16 @@ export function createObservabilityMiddleware(
         method: body.method,
         params: body.params,
       });
+    }
+
+    // For initialize requests, we'll emit in res.end() when we have the session ID
+    let deferredRequestEvent: { id: unknown; method: string; params: unknown } | null = null;
+    if (isInitializeRequest) {
+      deferredRequestEvent = {
+        id: body.id,
+        method: body.method,
+        params: body.params,
+      };
     }
 
     // Intercept response writes to capture SSE events and JSON responses
@@ -140,15 +152,27 @@ export function createObservabilityMiddleware(
         responseBuffer += chunkStr;
       }
 
+      // Determine the effective session ID (may come from response header for initialize)
+      const effectiveSessionId = sessionId || (res.getHeader('Mcp-Session-Id') as string) || 'unknown';
+      const bus = registry.getOrCreateBus(effectiveSessionId);
+
+      // Emit deferred initialize request event now that we have the session ID
+      if (deferredRequestEvent) {
+        bus.emit({
+          type: 'request',
+          id: deferredRequestEvent.id,
+          method: deferredRequestEvent.method,
+          params: deferredRequestEvent.params,
+        });
+        deferredRequestEvent = null;
+      }
+
       // Try to parse as JSON response if not SSE
       const contentType = res.getHeader('Content-Type');
       if (!contentType || !String(contentType).includes('text/event-stream')) {
         try {
           const json = JSON.parse(responseBuffer);
           if (isResponse(json)) {
-            const effectiveSessionId = sessionId || (res.getHeader('Mcp-Session-Id') as string) || 'unknown';
-            const bus = registry.getOrCreateBus(effectiveSessionId);
-
             bus.emit({
               type: 'response',
               id: json.id,

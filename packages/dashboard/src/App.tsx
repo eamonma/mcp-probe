@@ -30,12 +30,13 @@ function ConnectionStatus({ status }: { status: string }) {
 export default function App() {
   const {
     events,
-    activeTasks,
+    allTasks,
     toolCalls,
     sessions,
     connectionStatus,
     selectedSession,
     setSelectedSession,
+    clearEvents,
   } = useEvents();
 
   return (
@@ -60,16 +61,16 @@ export default function App() {
       {/* Main content */}
       <main className="container mx-auto px-4 py-6">
         <div className="grid gap-6 lg:grid-cols-2">
-          {/* Active Tasks */}
+          {/* Tasks */}
           <section className="rounded-lg border bg-card">
             <div className="border-b px-4 py-3">
-              <h2 className="font-semibold">Active Tasks</h2>
+              <h2 className="font-semibold">Tasks</h2>
               <p className="text-sm text-muted-foreground">
-                {activeTasks.length} task{activeTasks.length !== 1 ? 's' : ''} in progress
+                {allTasks.length} task{allTasks.length !== 1 ? 's' : ''}
               </p>
             </div>
             <div className="p-4">
-              <TasksTable tasks={activeTasks} />
+              <TasksTable tasks={allTasks} />
             </div>
           </section>
 
@@ -89,11 +90,19 @@ export default function App() {
 
         {/* Event Stream */}
         <section className="mt-6 rounded-lg border bg-card">
-          <div className="border-b px-4 py-3">
-            <h2 className="font-semibold">Event Stream</h2>
-            <p className="text-sm text-muted-foreground">
-              Live JSON-RPC traffic ({events.length} events)
-            </p>
+          <div className="flex items-center justify-between border-b px-4 py-3">
+            <div>
+              <h2 className="font-semibold">Event Stream</h2>
+              <p className="text-sm text-muted-foreground">
+                Live JSON-RPC traffic ({events.length} events)
+              </p>
+            </div>
+            <button
+              onClick={clearEvents}
+              className="rounded-md bg-secondary px-3 py-1.5 text-sm font-medium text-secondary-foreground hover:bg-secondary/80 transition-colors"
+            >
+              Clear
+            </button>
           </div>
           <div className="max-h-[600px] overflow-y-auto">
             <EventStream events={events} />

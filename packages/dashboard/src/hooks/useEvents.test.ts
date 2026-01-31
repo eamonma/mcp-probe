@@ -81,10 +81,10 @@ describe('useEvents', () => {
       messageHandler?.({ type: 'event', sessionId: 'test', event: createdEvent });
     });
 
-    expect(result.current.activeTasks).toHaveLength(1);
-    expect(result.current.activeTasks[0].taskId).toBe('task-1');
-    expect(result.current.activeTasks[0].toolName).toBe('test-tool');
-    expect(result.current.activeTasks[0].status).toBe('working');
+    expect(result.current.allTasks).toHaveLength(1);
+    expect(result.current.allTasks[0].taskId).toBe('task-1');
+    expect(result.current.allTasks[0].toolName).toBe('test-tool');
+    expect(result.current.allTasks[0].status).toBe('working');
   });
 
   it('updates task status on task:status events', async () => {
@@ -113,42 +113,9 @@ describe('useEvents', () => {
       messageHandler?.({ type: 'event', sessionId: 'test', event: statusEvent });
     });
 
-    expect(result.current.activeTasks).toHaveLength(1);
-    expect(result.current.activeTasks[0].status).toBe('input_required');
-    expect(result.current.activeTasks[0].statusMessage).toBe('Processing...');
-  });
-
-  it('removes tasks with terminal status', async () => {
-    const { result } = renderHook(() => useEvents());
-
-    const createdEvent: TaskCreatedEvent = {
-      type: 'task:created',
-      timestamp: Date.now(),
-      taskId: 'task-1',
-      toolName: 'test-tool',
-      toolArgs: {},
-      requestId: 1,
-    };
-
-    const completedEvent: TaskStatusEvent = {
-      type: 'task:status',
-      timestamp: Date.now() + 1000,
-      taskId: 'task-1',
-      previousStatus: 'working',
-      newStatus: 'completed',
-    };
-
-    act(() => {
-      messageHandler?.({ type: 'event', sessionId: 'test', event: createdEvent });
-    });
-
-    expect(result.current.activeTasks).toHaveLength(1);
-
-    act(() => {
-      messageHandler?.({ type: 'event', sessionId: 'test', event: completedEvent });
-    });
-
-    expect(result.current.activeTasks).toHaveLength(0);
+    expect(result.current.allTasks).toHaveLength(1);
+    expect(result.current.allTasks[0].status).toBe('input_required');
+    expect(result.current.allTasks[0].statusMessage).toBe('Processing...');
   });
 
   it('derives tool calls from request/response pairs', async () => {
@@ -294,7 +261,42 @@ describe('useEvents', () => {
     expect(result.current.sessions).toHaveLength(0);
   });
 
-  it('removes tasks with cancelled status (British spelling)', async () => {
+  it('keeps completed tasks in allTasks', async () => {
+    const { result } = renderHook(() => useEvents());
+
+    const createdEvent: TaskCreatedEvent = {
+      type: 'task:created',
+      timestamp: Date.now(),
+      taskId: 'task-1',
+      toolName: 'test-tool',
+      toolArgs: {},
+      requestId: 1,
+    };
+
+    const completedEvent: TaskStatusEvent = {
+      type: 'task:status',
+      timestamp: Date.now() + 1000,
+      taskId: 'task-1',
+      previousStatus: 'working',
+      newStatus: 'completed',
+    };
+
+    act(() => {
+      messageHandler?.({ type: 'event', sessionId: 'test', event: createdEvent });
+    });
+
+    expect(result.current.allTasks).toHaveLength(1);
+
+    act(() => {
+      messageHandler?.({ type: 'event', sessionId: 'test', event: completedEvent });
+    });
+
+    // Task should still be present with completed status
+    expect(result.current.allTasks).toHaveLength(1);
+    expect(result.current.allTasks[0].status).toBe('completed');
+  });
+
+  it('keeps cancelled tasks in allTasks (British spelling)', async () => {
     const { result } = renderHook(() => useEvents());
 
     const createdEvent: TaskCreatedEvent = {
@@ -318,13 +320,50 @@ describe('useEvents', () => {
       messageHandler?.({ type: 'event', sessionId: 'test', event: createdEvent });
     });
 
-    expect(result.current.activeTasks).toHaveLength(1);
+    expect(result.current.allTasks).toHaveLength(1);
 
     act(() => {
       messageHandler?.({ type: 'event', sessionId: 'test', event: cancelledEvent });
     });
 
-    expect(result.current.activeTasks).toHaveLength(0);
+    // Task should still be present with cancelled status
+    expect(result.current.allTasks).toHaveLength(1);
+    expect(result.current.allTasks[0].status).toBe('cancelled');
+  });
+
+  it('keeps failed tasks in allTasks', async () => {
+    const { result } = renderHook(() => useEvents());
+
+    const createdEvent: TaskCreatedEvent = {
+      type: 'task:created',
+      timestamp: Date.now(),
+      taskId: 'task-1',
+      toolName: 'test-tool',
+      toolArgs: {},
+      requestId: 1,
+    };
+
+    const failedEvent: TaskStatusEvent = {
+      type: 'task:status',
+      timestamp: Date.now() + 1000,
+      taskId: 'task-1',
+      previousStatus: 'working',
+      newStatus: 'failed',
+    };
+
+    act(() => {
+      messageHandler?.({ type: 'event', sessionId: 'test', event: createdEvent });
+    });
+
+    expect(result.current.allTasks).toHaveLength(1);
+
+    act(() => {
+      messageHandler?.({ type: 'event', sessionId: 'test', event: failedEvent });
+    });
+
+    // Task should still be present with failed status
+    expect(result.current.allTasks).toHaveLength(1);
+    expect(result.current.allTasks[0].status).toBe('failed');
   });
 
   it('attaches progress to task when progressToken matches taskId', async () => {
@@ -357,11 +396,146 @@ describe('useEvents', () => {
       messageHandler?.({ type: 'event', sessionId: 'test', event: progressEvent });
     });
 
-    expect(result.current.activeTasks).toHaveLength(1);
-    expect(result.current.activeTasks[0].taskId).toBe('task-123');
-    expect(result.current.activeTasks[0].progress).toBeDefined();
-    expect(result.current.activeTasks[0].progress?.current).toBe(50);
-    expect(result.current.activeTasks[0].progress?.total).toBe(100);
-    expect(result.current.activeTasks[0].progress?.message).toBe('Half done');
+    expect(result.current.allTasks).toHaveLength(1);
+    expect(result.current.allTasks[0].taskId).toBe('task-123');
+    expect(result.current.allTasks[0].progress).toBeDefined();
+    expect(result.current.allTasks[0].progress?.current).toBe(50);
+    expect(result.current.allTasks[0].progress?.total).toBe(100);
+    expect(result.current.allTasks[0].progress?.message).toBe('Half done');
+  });
+
+  it('clears all events when clearEvents is called', async () => {
+    const { result } = renderHook(() => useEvents());
+
+    // Add some events
+    const event1: RequestEvent = {
+      type: 'request',
+      timestamp: 1000,
+      id: 1,
+      method: 'tools/call',
+      params: { name: 'test' },
+    };
+
+    const event2: RequestEvent = {
+      type: 'request',
+      timestamp: 2000,
+      id: 2,
+      method: 'tools/list',
+    };
+
+    act(() => {
+      messageHandler?.({ type: 'event', sessionId: 'test', event: event1 });
+      messageHandler?.({ type: 'event', sessionId: 'test', event: event2 });
+    });
+
+    expect(result.current.events).toHaveLength(2);
+
+    // Clear events
+    act(() => {
+      result.current.clearEvents();
+    });
+
+    expect(result.current.events).toHaveLength(0);
+  });
+
+  it('preserves events from other sessions when switching sessions', async () => {
+    const { result } = renderHook(() => useEvents());
+
+    // Add events from session A
+    const eventA1: RequestEvent = {
+      type: 'request',
+      timestamp: 1000,
+      id: 1,
+      method: 'tools/call',
+      params: { name: 'tool-a1' },
+    };
+
+    const eventA2: RequestEvent = {
+      type: 'request',
+      timestamp: 2000,
+      id: 2,
+      method: 'tools/call',
+      params: { name: 'tool-a2' },
+    };
+
+    act(() => {
+      messageHandler?.({ type: 'event', sessionId: 'session-a', event: eventA1 });
+      messageHandler?.({ type: 'event', sessionId: 'session-a', event: eventA2 });
+    });
+
+    // Should have 2 events from session A
+    expect(result.current.events).toHaveLength(2);
+
+    // Switch to session B
+    act(() => {
+      result.current.setSelectedSession('session-b');
+    });
+
+    // Add event from session B
+    const eventB1: RequestEvent = {
+      type: 'request',
+      timestamp: 3000,
+      id: 3,
+      method: 'tools/call',
+      params: { name: 'tool-b1' },
+    };
+
+    act(() => {
+      messageHandler?.({ type: 'event', sessionId: 'session-b', event: eventB1 });
+    });
+
+    // Should show only session B events when session B is selected
+    expect(result.current.events).toHaveLength(1);
+    expect(result.current.events[0]).toEqual(eventB1);
+
+    // Switch back to "All sessions" (*)
+    act(() => {
+      result.current.setSelectedSession('*');
+    });
+
+    // Should show all events from all sessions
+    expect(result.current.events).toHaveLength(3);
+  });
+
+  it('exposes allEvents with events from all sessions regardless of filter', async () => {
+    const { result } = renderHook(() => useEvents());
+
+    // Add events from session A
+    const eventA: RequestEvent = {
+      type: 'request',
+      timestamp: 1000,
+      id: 1,
+      method: 'tools/call',
+      params: { name: 'tool-a' },
+    };
+
+    act(() => {
+      messageHandler?.({ type: 'event', sessionId: 'session-a', event: eventA });
+    });
+
+    // Switch to session B
+    act(() => {
+      result.current.setSelectedSession('session-b');
+    });
+
+    // Add event from session B
+    const eventB: RequestEvent = {
+      type: 'request',
+      timestamp: 2000,
+      id: 2,
+      method: 'tools/call',
+      params: { name: 'tool-b' },
+    };
+
+    act(() => {
+      messageHandler?.({ type: 'event', sessionId: 'session-b', event: eventB });
+    });
+
+    // events should show only session B (filtered view)
+    expect(result.current.events).toHaveLength(1);
+    expect(result.current.events[0]).toEqual(eventB);
+
+    // allEvents should show all events regardless of filter
+    expect(result.current.allEvents).toHaveLength(2);
   });
 });
