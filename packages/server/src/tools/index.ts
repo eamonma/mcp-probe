@@ -9,6 +9,8 @@ import * as cancellableTask from './cancellable-task.js';
 import * as multiStageTask from './multi-stage-task.js';
 import * as failingTask from './failing-task.js';
 import * as pausableTask from './pausable-task.js';
+import * as getLocation from './get-location.js';
+import * as getWeather from './get-weather.js';
 
 // Export individual tools for direct access
 export {
@@ -20,6 +22,8 @@ export {
   multiStageTask,
   failingTask,
   pausableTask,
+  getLocation,
+  getWeather,
 };
 
 // List of all tool names for reference
@@ -32,19 +36,35 @@ export const toolNames = [
   multiStageTask.name,
   failingTask.name,
   pausableTask.name,
+  getLocation.name,
+  getWeather.name,
 ] as const;
 
+// All tools as an array for filtering
+const allTools = [
+  simpleTool,
+  syncWithProgress,
+  pureTask,
+  taskWithProgress,
+  cancellableTask,
+  multiStageTask,
+  failingTask,
+  pausableTask,
+  getLocation,
+  getWeather,
+];
+
 /**
- * Register all MCP Probe tools with the given server.
- * This is the main entry point for tool registration.
+ * Register MCP Probe tools with the given server.
+ * Optionally filter to only register a subset of tools.
+ *
+ * @param server - The MCP server to register tools with
+ * @param filter - Optional array of tool names to include. If not provided, all tools are registered.
  */
-export function registerAllTools(server: McpServer): void {
-  simpleTool.register(server);
-  syncWithProgress.register(server);
-  pureTask.register(server);
-  taskWithProgress.register(server);
-  cancellableTask.register(server);
-  multiStageTask.register(server);
-  failingTask.register(server);
-  pausableTask.register(server);
+export function registerAllTools(server: McpServer, filter?: string[]): void {
+  for (const tool of allTools) {
+    if (!filter || filter.includes(tool.name)) {
+      tool.register(server);
+    }
+  }
 }
