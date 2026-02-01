@@ -59,17 +59,6 @@ resource containerAppEnv 'Microsoft.App/managedEnvironments@2024-03-01' = {
   }
 }
 
-// Managed Certificate for custom domain
-resource managedCert 'Microsoft.App/managedEnvironments/managedCertificates@2024-03-01' = {
-  parent: containerAppEnv
-  name: 'cert-${replace(customDomain, '.', '-')}'
-  location: location
-  properties: {
-    subjectName: customDomain
-    domainControlValidation: 'CNAME'
-  }
-}
-
 // Container App (initial deployment with placeholder image)
 resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
   name: containerAppName
@@ -86,7 +75,6 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
           {
             name: customDomain
             bindingType: 'SniEnabled'
-            certificateId: managedCert.id
           }
         ]
       }
