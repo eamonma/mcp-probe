@@ -5,6 +5,7 @@ param acrName string
 param containerAppEnvName string
 param containerAppName string
 param customDomain string = 'mcp.eamon.io'
+param customDomainCertName string = 'mcp.eamon.io-rg-mcppr-260131071018'
 
 // Azure Container Registry
 resource acr 'Microsoft.ContainerRegistry/registries@2023-07-01' = {
@@ -59,6 +60,12 @@ resource containerAppEnv 'Microsoft.App/managedEnvironments@2024-03-01' = {
   }
 }
 
+// Reference existing managed certificate (created during manual bootstrap)
+resource existingCert 'Microsoft.App/managedEnvironments/managedCertificates@2024-03-01' existing = {
+  parent: containerAppEnv
+  name: customDomainCertName
+}
+
 // Container App (initial deployment with placeholder image)
 resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
   name: containerAppName
@@ -75,6 +82,7 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
           {
             name: customDomain
             bindingType: 'SniEnabled'
+            certificateId: existingCert.id
           }
         ]
       }
