@@ -30,6 +30,20 @@ resource logAnalytics 'Microsoft.OperationalInsights/workspaces@2023-09-01' = {
   }
 }
 
+// Application Insights for OpenTelemetry
+resource appInsights 'Microsoft.Insights/components@2020-02-02' = {
+  name: '${containerAppEnvName}-insights'
+  location: location
+  kind: 'web'
+  properties: {
+    Application_Type: 'web'
+    WorkspaceResourceId: logAnalytics.id
+    IngestionMode: 'LogAnalytics'
+    publicNetworkAccessForIngestion: 'Enabled'
+    publicNetworkAccessForQuery: 'Enabled'
+  }
+}
+
 // Container Apps Environment
 resource containerAppEnv 'Microsoft.App/managedEnvironments@2024-03-01' = {
   name: containerAppEnvName
@@ -95,6 +109,14 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
               name: 'NODE_ENV'
               value: 'production'
             }
+            {
+              name: 'OTEL_ENABLED'
+              value: 'true'
+            }
+            {
+              name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
+              value: appInsights.properties.ConnectionString
+            }
           ]
         }
       ]
@@ -122,3 +144,4 @@ output acrLoginServer string = acr.properties.loginServer
 output containerAppName string = containerApp.name
 output containerAppFqdn string = containerApp.properties.configuration.ingress.fqdn
 output customDomainVerificationId string = containerAppEnv.properties.customDomainConfiguration.customDomainVerificationId
+output appInsightsConnectionString string = appInsights.properties.ConnectionString

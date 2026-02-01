@@ -9,6 +9,7 @@ import { ObservableTaskStore } from './events/observable-task-store.js';
 import { wrapTransportForObservability } from './events/observable-transport.js';
 import { createObservabilityMiddleware } from './observability/middleware.js';
 import { WebSocketHub } from './realtime/websocket-hub.js';
+import { setSpanAttributes, MCP_ATTRIBUTES } from './telemetry/index.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -138,6 +139,21 @@ export function createApp(options?: AppOptions): AppWithObservability | AppWitho
     const sessionId = req.headers['mcp-session-id'] as string | undefined;
     const body = req.body;
 
+    // Add OTEL span attributes for MCP messages
+    if (body?.method) {
+      setSpanAttributes({
+        [MCP_ATTRIBUTES.MESSAGE_METHOD]: body.method,
+        [MCP_ATTRIBUTES.MESSAGE_ID]: body.id ? String(body.id) : 'notification',
+        [MCP_ATTRIBUTES.MESSAGE_TYPE]: body.id ? 'request' : 'notification',
+      });
+    }
+
+    if (sessionId) {
+      setSpanAttributes({
+        [MCP_ATTRIBUTES.SESSION_ID]: sessionId,
+      });
+    }
+
     // Check if this is an initialize request
     const isInitialize = body?.method === 'initialize';
 
@@ -145,6 +161,12 @@ export function createApp(options?: AppOptions): AppWithObservability | AppWitho
       // Create a new session for the client
       const clientInfo = body.params?.clientInfo || { name: 'unknown', version: '0.0.0' };
       const capabilities = body.params?.capabilities || {};
+
+      // Add client info to OTEL span
+      setSpanAttributes({
+        [MCP_ATTRIBUTES.CLIENT_NAME]: clientInfo.name,
+        [MCP_ATTRIBUTES.CLIENT_VERSION]: clientInfo.version,
+      });
 
       const session = sessionManager.createSession(clientInfo, capabilities);
 
