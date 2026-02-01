@@ -4,7 +4,7 @@ param location string
 param acrName string
 param containerAppEnvName string
 param containerAppName string
-// Custom domain configured post-deployment via Azure Portal or CLI
+param customDomain string = 'mcp.eamon.io'
 
 // Azure Container Registry
 resource acr 'Microsoft.ContainerRegistry/registries@2023-07-01' = {
@@ -59,6 +59,17 @@ resource containerAppEnv 'Microsoft.App/managedEnvironments@2024-03-01' = {
   }
 }
 
+// Managed Certificate for custom domain
+resource managedCert 'Microsoft.App/managedEnvironments/managedCertificates@2024-03-01' = {
+  parent: containerAppEnv
+  name: 'cert-${replace(customDomain, '.', '-')}'
+  location: location
+  properties: {
+    subjectName: customDomain
+    domainControlValidation: 'CNAME'
+  }
+}
+
 // Container App (initial deployment with placeholder image)
 resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
   name: containerAppName
@@ -71,6 +82,13 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
         targetPort: 3000
         transport: 'http'
         allowInsecure: false
+        customDomains: [
+          {
+            name: customDomain
+            bindingType: 'SniEnabled'
+            certificateId: managedCert.id
+          }
+        ]
       }
       registries: [
         {
