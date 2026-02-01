@@ -23,13 +23,18 @@ export class SessionManager {
 
   /**
    * Creates a new session for a connecting client.
+   *
+   * @param clientInfo - Information about the connecting client
+   * @param capabilities - Client capabilities
+   * @param toolFilter - Optional array of tool names to register. If not provided, all tools are registered.
    */
   createSession(
     clientInfo: { name: string; version: string },
-    capabilities: ClientCapabilities
+    capabilities: ClientCapabilities,
+    toolFilter?: string[]
   ): SessionInfo {
     const sessionId = randomUUID();
-    const { server, transport } = this.createMcpServerWithTransport(sessionId);
+    const { server, transport } = this.createMcpServerWithTransport(sessionId, toolFilter);
 
     const sessionInfo: SessionInfo = {
       sessionId,
@@ -94,8 +99,14 @@ export class SessionManager {
   /**
    * Creates an MCP server with transport for a session.
    * Uses the injected TaskStore factory.
+   *
+   * @param sessionId - The session ID
+   * @param toolFilter - Optional array of tool names to register
    */
-  private createMcpServerWithTransport(sessionId: string): {
+  private createMcpServerWithTransport(
+    sessionId: string,
+    toolFilter?: string[]
+  ): {
     server: McpServer;
     transport: StreamableHTTPServerTransport;
   } {
@@ -121,8 +132,8 @@ export class SessionManager {
       }
     );
 
-    // Register all tools from modular tool definitions
-    registerAllTools(server);
+    // Register tools from modular tool definitions (optionally filtered)
+    registerAllTools(server, toolFilter);
 
     // Create transport for this session
     let transport: StreamableHTTPServerTransport = new StreamableHTTPServerTransport({

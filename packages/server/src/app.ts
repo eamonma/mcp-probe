@@ -162,13 +162,17 @@ export function createApp(options?: AppOptions): AppWithObservability | AppWitho
       const clientInfo = body.params?.clientInfo || { name: 'unknown', version: '0.0.0' };
       const capabilities = body.params?.capabilities || {};
 
+      // Parse optional tool filter from query parameter
+      const toolsParam = req.query.tools as string | undefined;
+      const toolFilter = toolsParam ? toolsParam.split(',').map((t) => t.trim()) : undefined;
+
       // Add client info to OTEL span
       setSpanAttributes({
         [MCP_ATTRIBUTES.CLIENT_NAME]: clientInfo.name,
         [MCP_ATTRIBUTES.CLIENT_VERSION]: clientInfo.version,
       });
 
-      const session = sessionManager.createSession(clientInfo, capabilities);
+      const session = sessionManager.createSession(clientInfo, capabilities, toolFilter);
 
       // Log client capabilities
       console.log(`[MCP Probe] Client ${clientInfo.name} connected with capabilities:`, JSON.stringify(capabilities, null, 2));
